@@ -1,70 +1,101 @@
 # -*- mode: ruby -*-
 # vi: set ft=ruby :
 
+vagrant_root = File.basename(File.dirname(__FILE__))
+
 # All Vagrant configuration is done below. The "2" in Vagrant.configure
 # configures the configuration version (we support older styles for
 # backwards compatibility). Please don't change it unless you know what
 # you're doing.
 Vagrant.configure("2") do |config|
-  # The most common configuration options are documented and commented below.
-  # For a complete reference, please see the online documentation at
-  # https://docs.vagrantup.com.
-
-  # Every Vagrant development environment requires a box. You can search for
-  # boxes at https://vagrantcloud.com/search.
   config.vm.box = "ubuntu/xenial64"
+  config.vm.box_check_update = false
+  config.vm.hostname = vagrant_root
+  config.vm.define vagrant_root do |foo|
+  end
 
-  # Disable automatic box update checking. If you disable this, then
-  # boxes will only be checked for updates when the user runs
-  # `vagrant box outdated`. This is not recommended.
-  # config.vm.box_check_update = false
+  # Specify VirtualBox parameters
+  config.vm.provider "virtualbox" do |vb|
+      vb.memory = 2048
+      vb.cpus = 2
+      vb.name = config.vm.hostname
+  end
 
-  # Create a forwarded port mapping which allows access to a specific port
-  # within the machine from a port on the host machine. In the example below,
-  # accessing "localhost:8080" will access port 80 on the guest machine.
-  # NOTE: This will enable public access to the opened port
-  # config.vm.network "forwarded_port", guest: 80, host: 8080
+  # Update and install core necessities
+  config.vm.provision "shell", inline: <<-SHELL
+      apt-get -y update
+      apt-get -y upgrade
+  SHELL
+  config.vm.provision "shell", inline: <<-SHELL
+      apt-get install -y g++
+      apt-get install -y cmake
+      apt-get install -y autoconf
+      apt-get install -y libncurses5-dev
+      apt-get install -y libevent-dev
+      apt-get install -y golang-go
+  SHELL
 
-  # Create a forwarded port mapping which allows access to a specific port
-  # within the machine from a port on the host machine and only allow access
-  # via 127.0.0.1 to disable public access
-  # config.vm.network "forwarded_port", guest: 80, host: 8080, host_ip: "127.0.0.1"
+  # Build fish shell
+  config.vm.provision "shell", inline: <<-SHELL
+      git clone https://github.com/fish-shell/fish-shell.git
+      mkdir fish-shell/build && cd fish-shell/build
+      cmake ..
+      make
+      make install
+      echo /usr/local/bin/fish | tee -a /etc/shells
+      chsh -s /usr/local/bin/fish vagrant
+      cd ../.. && rm -rf fish-shell
+  SHELL
+  config.vm.provision "shell", privileged: false, inline: <<-SHELL
+      mkdir -p /home/vagrant/.config/fish
+  SHELL
 
-  # Create a private network, which allows host-only access to the machine
-  # using a specific IP.
-  # config.vm.network "private_network", ip: "192.168.33.10"
+  # Build tmux
+  config.vm.provision "shell", inline: <<-SHELL
+      git clone https://github.com/tmux/tmux.git
+      cd tmux
+      git checkout 2.7
+      ./autogen.sh
+      ./configure && make
+      make install
+      cd .. && rm -rf tmux
+  SHELL
 
-  # Create a public network, which generally matched to bridged network.
-  # Bridged networks make the machine appear as another physical device on
-  # your network.
-  # config.vm.network "public_network"
+  # Build vim
+  config.vm.provision "shell", inline: <<-SHELL
+      git clone https://github.com/vim/vim.git
+      cd vim/src && make
+      make install
+      cd ../.. && rm -rf vim
+  SHELL
 
-  # Share an additional folder to the guest VM. The first argument is
-  # the path on the host to the actual folder. The second argument is
-  # the path on the guest to mount the folder. And the optional third
-  # argument is a set of non-required options.
-  # config.vm.synced_folder "../data", "/vagrant_data"
+  # Build golang
+  config.vm.provision "shell", privileged: false, inline: <<-SHELL
+      git clone https://go.googlesource.com/go
+      cd go && git checkout go1.10.3
+      cd src && ./all.bash
+      cd .. && cp -r bin/ /home/vagrant/go-bin-tmp
+      cd .. && rm -rf go
+      mkdir -p /home/vagrant/go/
+      cp -r /home/vagrant/go-bin-tmp/ /home/vagrant/go/bin
+      rm -rf /home/vagrant/go-bin-tmp
+  SHELL
 
-  # Provider-specific configuration so you can fine-tune various
-  # backing providers for Vagrant. These expose provider-specific options.
-  # Example for VirtualBox:
-  #
-  # config.vm.provider "virtualbox" do |vb|
-  #   # Display the VirtualBox GUI when booting the machine
-  #   vb.gui = true
-  #
-  #   # Customize the amount of memory on the VM:
-  #   vb.memory = "1024"
-  # end
-  #
-  # View the documentation for the provider you are using for more
-  # information on available options.
+  # Copy dotfiles
+  config.vm.provision "file", source: ".dotfiles", destination: "/home/vagrant/.dotfiles"
+  config.vm.provision "shell", privileged: false, inline: <<-SHELL
+      cd /home/vagrant/.dotfiles && make
+  SHELL
 
-  # Enable provisioning with a shell script. Additional provisioners such as
-  # Puppet, Chef, Ansible, Salt, and Docker are also available. Please see the
-  # documentation for more information about their specific syntax and use.
-  # config.vm.provision "shell", inline: <<-SHELL
-  #   apt-get update
-  #   apt-get install -y apache2
-  # SHELL
+  # Install tmux plugins
+  config.vm.provision "shell", privileged: false, inline: <<-SHELL
+      git clone https://github.com/tmux-plugins/tpm /home/vagrant/.tmux/plugins/tpm
+      cd /home/vagrant/.tmux/plugins/tpm/bin/ && ./install_plugins
+  SHELL
+
+  # Install vim plugins
+  config.vm.provision "shell", privileged: false, inline: <<-SHELL
+      git clone https://github.com/VundleVim/Vundle.vim.git /home/vagrant/.vim/bundle/Vundle.vim
+      vim -c "PluginInstall" -c "q" -c "q" > /dev/null
+  SHELL
 end

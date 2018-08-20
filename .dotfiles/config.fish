@@ -31,9 +31,14 @@ end
 # Construct $PATH
 # =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 # main PATH
-set PATH {$HOME}/bin/ $PATH /bin /usr/bin /sbin /usr/sbin /usr/local/bin ^ /dev/null
+set PATH $PATH /bin /usr/bin /sbin /usr/sbin /usr/local/bin ^ /dev/null
 # go stuff
-set PATH $PATH {$HOME}/go/bin ^ /dev/null
+set PATH {$HOME}/go/bin $PATH ^ /dev/null
+# user-level overrides
+set PATH {$HOME}/bin/ $PATH ^ /dev/null
+
+# Go paths
+set GOROOT {$HOME}/go
 
 # Specific program overrides
 # =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
