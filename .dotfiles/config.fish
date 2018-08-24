@@ -38,7 +38,7 @@ set PATH {$HOME}/go/bin $PATH ^ /dev/null
 set PATH {$HOME}/bin/ $PATH ^ /dev/null
 
 # Go paths
-set GOROOT {$HOME}/go
+set GOPATH {$HOME}/go
 
 # Specific program overrides
 # =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=

@@ -35,6 +35,11 @@ Vagrant.configure("2") do |config|
       apt-get install -y golang-go
   SHELL
 
+  # Create user ~/bin directory
+  config.vm.provision "shell", privileged: false, inline: <<-SHELL
+      mkdir -p /home/vagrant/bin
+  SHELL
+
   # Build fish shell
   config.vm.provision "shell", inline: <<-SHELL
       git clone https://github.com/fish-shell/fish-shell.git
@@ -71,14 +76,11 @@ Vagrant.configure("2") do |config|
 
   # Build golang
   config.vm.provision "shell", privileged: false, inline: <<-SHELL
-      git clone https://go.googlesource.com/go
-      cd go && git checkout go1.10.3
+      git clone https://go.googlesource.com/go /home/vagrant/bin/go-bin
+      cd /home/vagrant/bin/go-bin && git checkout go1.10.3
       cd src && ./all.bash
-      cd .. && cp -r bin/ /home/vagrant/go-bin-tmp
-      cd .. && rm -rf go
-      mkdir -p /home/vagrant/go/
-      cp -r /home/vagrant/go-bin-tmp/ /home/vagrant/go/bin
-      rm -rf /home/vagrant/go-bin-tmp
+      ln -s /home/vagrant/bin/go-bin/bin/go /home/vagrant/bin/go
+      ln -s /home/vagrant/bin/go-bin/bin/gofmt /home/vagrant/bin/gofmt
   SHELL
 
   # Copy dotfiles
