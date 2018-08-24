@@ -84,7 +84,7 @@ Vagrant.configure("2") do |config|
   SHELL
 
   # Copy dotfiles
-  config.vm.provision "file", source: ".dotfiles", destination: "/home/vagrant/.dotfiles"
+  config.vm.provision "file", source: "dotfiles", destination: "/home/vagrant/.dotfiles"
   config.vm.provision "shell", privileged: false, inline: <<-SHELL
       cd /home/vagrant/.dotfiles && make
   SHELL
