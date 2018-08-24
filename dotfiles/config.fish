@@ -53,7 +53,7 @@ end
 grep -qE "(Microsoft|WSL)" /proc/version > /dev/null
 if test $status -ne 0
 else
-    set DISPLAY localhost:0.0
+    set -x DISPLAY localhost:0.0
 end
 
 # Customize ls
